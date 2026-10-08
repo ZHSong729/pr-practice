@@ -1,2 +1,2 @@
 # pr-practice
-Teh quick brown fox
+The quick brown fox
