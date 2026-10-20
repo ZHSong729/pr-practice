@@ -1,0 +1,52 @@
+name: Daily AI Tutor
+
+on:
+  schedule:
+    # 03:50 UTC = 12:50 KST. Runs a few minutes early so the note is ready by 13:00,
+    # and avoids the start of the hour, when scheduled runs are most often delayed.
+    - cron: "50 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-ai-tutor
+  cancel-in-progress: false
+
+jobs:
+  generate-note:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: daily-ai-tutor
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Generate today's note
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python agent.py
+
+      - name: Commit note
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add notes progress.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Add AI learning note for $(TZ=Asia/Seoul date +%F)"
+            git push
+          fi
