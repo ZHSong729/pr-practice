@@ -60,7 +60,7 @@ Claude Code 예약 작업이 매일 이 문서를 읽고 순서대로 실행합�
 
 1단계에서 바뀐 `ai-coach/state.json`, 퀴즈 파일, 오늘 만든 두 파일을 `main`에 커밋합니다.
 커밋 메시지: `AI Coach: <date> <주제>`.
-`git push origin main`이 거절되면 GitHub 도구로 같은 파일을 `main`에 커밋합니다 (push_files).
+GitHub 도구(push_files)로 `main`에 커밋합니다. GitHub 도구가 없을 때만 `git push origin main`을 씁니다.
 둘 다 실패하면 이슈를 만들지 말고 실패 이유를 남긴 채 끝냅니다 (채점 결과가 저장되지 않으면 다음 날 계획이 틀어집니다).
 
 ## 6. 이슈 만들기
