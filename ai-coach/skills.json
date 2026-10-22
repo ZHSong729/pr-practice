@@ -1,0 +1,29 @@
+{
+  "description": "입문자용 AI 기술 스킬 맵. 위에서부터가 권장 순서이며, 선수 스킬(prereqs)을 한 번 이상 통과해야 다음 스킬이 열립니다.",
+  "skills": [
+    {"id": "ai-ml-dl", "track": "ML 기초", "title": "AI·머신러닝·딥러닝은 어떤 관계인가", "prereqs": []},
+    {"id": "llm-basics", "track": "LLM 앱/에이전트", "title": "LLM이란 무엇인가: 다음 토큰 예측", "prereqs": ["ai-ml-dl"]},
+    {"id": "learning-types", "track": "ML 기초", "title": "지도학습·비지도학습·강화학습", "prereqs": ["ai-ml-dl"]},
+    {"id": "tokens-context", "track": "LLM 앱/에이전트", "title": "토큰과 컨텍스트 윈도우", "prereqs": ["llm-basics"]},
+    {"id": "training-loop", "track": "ML 기초", "title": "학습 데이터, 손실 함수, 경사하강법의 직관", "prereqs": ["learning-types"]},
+    {"id": "prompting", "track": "LLM 앱/에이전트", "title": "프롬프트 기초: 역할, 지시, 예시", "prereqs": ["tokens-context"]},
+    {"id": "api-vs-selfhost", "track": "MLOps/인프라", "title": "모델을 API로 쓰기 vs 직접 운영하기", "prereqs": ["llm-basics"]},
+    {"id": "neural-net", "track": "ML 기초", "title": "신경망의 구조: 뉴런, 층, 가중치", "prereqs": ["training-loop"]},
+    {"id": "api-first-call", "track": "LLM 앱/에이전트", "title": "LLM API 첫 호출: 요청과 응답의 구조", "prereqs": ["prompting"]},
+    {"id": "hallucination", "track": "LLM 앱/에이전트", "title": "환각(hallucination)과 사실 검증", "prereqs": ["llm-basics"]},
+    {"id": "overfitting", "track": "ML 기초", "title": "과적합과 학습/검증/테스트 데이터", "prereqs": ["training-loop"]},
+    {"id": "cost-latency", "track": "MLOps/인프라", "title": "토큰 비용과 응답 지연 시간", "prereqs": ["tokens-context", "api-vs-selfhost"]},
+    {"id": "embeddings", "track": "ML 기초", "title": "임베딩: 의미를 숫자 벡터로 표현하기", "prereqs": ["neural-net"]},
+    {"id": "structured-output", "track": "LLM 앱/에이전트", "title": "구조화된 출력: LLM에게 JSON 받기", "prereqs": ["api-first-call"]},
+    {"id": "transformer", "track": "ML 기초", "title": "트랜스포머와 어텐션의 직관", "prereqs": ["neural-net", "embeddings"]},
+    {"id": "tool-use", "track": "LLM 앱/에이전트", "title": "도구 사용(함수 호출)의 원리", "prereqs": ["api-first-call"]},
+    {"id": "rag", "track": "LLM 앱/에이전트", "title": "RAG: 검색으로 답변을 보강하기", "prereqs": ["embeddings", "hallucination", "api-first-call"]},
+    {"id": "caching", "track": "MLOps/인프라", "title": "프롬프트 캐싱으로 비용 줄이기", "prereqs": ["cost-latency"]},
+    {"id": "agents", "track": "LLM 앱/에이전트", "title": "에이전트: 도구를 반복해서 쓰는 루프", "prereqs": ["tool-use"]},
+    {"id": "mcp", "track": "LLM 앱/에이전트", "title": "MCP: AI와 도구를 잇는 표준", "prereqs": ["tool-use"]},
+    {"id": "evals", "track": "LLM 앱/에이전트", "title": "LLM 앱 평가(eval) 기초", "prereqs": ["prompting", "hallucination"]},
+    {"id": "fine-tuning", "track": "MLOps/인프라", "title": "파인튜닝 vs 프롬프트 vs RAG, 언제 무엇을", "prereqs": ["rag", "training-loop"]},
+    {"id": "safety-security", "track": "LLM 앱/에이전트", "title": "프롬프트 인젝션과 AI 보안 기초", "prereqs": ["agents"]},
+    {"id": "deploy-monitor", "track": "MLOps/인프라", "title": "LLM 앱 배포와 모니터링", "prereqs": ["evals", "cost-latency"]}
+  ]
+}
