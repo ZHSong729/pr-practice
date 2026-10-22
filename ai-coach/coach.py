@@ -9,6 +9,11 @@ Usage:
     python coach.py             # today's interactive session
     python coach.py --status    # show your progress per skill
     python coach.py --dry-run   # show today's plan and prompt without calling the API
+
+Routine mode (no API key; a Claude Code scheduled task writes the lesson, see ROUTINE.md):
+    python coach.py --plan                                  # today's plan and writing instructions as JSON
+    python coach.py --check-note sessions/DATE.md           # footnote check as JSON
+    python coach.py --grade sessions/DATE.quiz.json --answers "1 3 2"   # grade and update state.json
 """
 
 import argparse
@@ -389,11 +394,67 @@ def describe_plan(plan):
     return "\n".join(lines)
 
 
+def plan_payload(profile, skills, state, today):
+    """Everything a routine needs to write today's lesson and quiz without the API."""
+    plan = plan_today(skills, state, today)
+    return {
+        "date": today.isoformat(),
+        "main": plan["main"],
+        "mode": plan["mode"],
+        "review": plan["review"],
+        "summary": describe_plan(plan),
+        "system_prompt": SYSTEM_PROMPT,
+        "lesson_prompt": build_lesson_prompt(profile, plan, state, today),
+        "quiz_instructions": build_quiz_prompt(plan, "(위에서 작성한 학습 자료)"),
+        "quiz_schema": QUIZ_SCHEMA,
+    }
+
+
+def parse_answers(text, count):
+    """Turn a reply like "1 3 2" or "1,3,2" into 0-based indexes."""
+    numbers = [int(n) for n in re.findall(r"\d+", text)]
+    if len(numbers) != count:
+        raise ValueError(f"답이 {count}개 필요한데 {len(numbers)}개입니다.")
+    return [n - 1 for n in numbers]
+
+
+def grade_quiz(skills, state, quiz, answers):
+    """Grade a saved routine quiz, update the state, and return a result summary."""
+    if quiz.get("graded"):
+        raise ValueError("이미 채점한 퀴즈입니다.")
+    questions = quiz["questions"]
+    for question, answer in zip(questions, answers):
+        if not 0 <= answer < len(question["choices"]):
+            raise ValueError(f"보기 번호는 1~{len(question['choices'])} 사이여야 합니다.")
+    by_id = {s["id"]: s for s in skills}
+    plan = {"main": by_id[quiz["main"]], "mode": quiz["mode"],
+            "review": by_id.get(quiz["review"]) if quiz.get("review") else None}
+    studied = date.fromisoformat(quiz["date"])
+    correct = record_results(state, plan, questions, answers, studied)
+    quiz["graded"] = True
+    quiz["answers"] = answers
+    results = [
+        {
+            "question": q["question"],
+            "your_answer": q["choices"][a],
+            "correct_answer": q["choices"][q["answer_index"]],
+            "ok": a == q["answer_index"],
+            "explanation": q["explanation"],
+        }
+        for q, a in zip(questions, answers)
+    ]
+    return {"correct": correct, "total": len(answers), "results": results}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Adaptive daily AI learning coach")
     parser.add_argument("--status", action="store_true", help="스킬별 진도 보기")
     parser.add_argument("--dry-run", action="store_true", help="오늘 계획과 프롬프트만 출력 (API 호출 없음)")
     parser.add_argument("--force", action="store_true", help="오늘 이미 학습했어도 한 번 더 진행")
+    parser.add_argument("--plan", action="store_true", help="루틴용: 오늘 계획과 작성 지시를 JSON으로 출력")
+    parser.add_argument("--check-note", metavar="FILE", help="루틴용: 학습 자료의 각주 점검 결과를 JSON으로 출력")
+    parser.add_argument("--grade", metavar="QUIZ_JSON", help="루틴용: 저장된 퀴즈를 채점하고 state.json 갱신")
+    parser.add_argument("--answers", help="--grade와 함께: 학습자의 답 (예: \"1 3 2\")")
     args = parser.parse_args()
 
     profile = load_json(PROFILE_PATH)
@@ -403,6 +464,22 @@ def main():
 
     if args.status:
         print_status(skills, state, today)
+        return 0
+    if args.plan:
+        print(json.dumps(plan_payload(profile, skills, state, today), ensure_ascii=False, indent=2))
+        return 0
+    if args.check_note:
+        missing, unused = check_footnotes(Path(args.check_note).read_text(encoding="utf-8"))
+        print(json.dumps({"missing": missing, "unused": unused}))
+        return 1 if missing else 0
+    if args.grade:
+        quiz_path = Path(args.grade)
+        quiz = load_json(quiz_path)
+        result = grade_quiz(skills, state, quiz, parse_answers(args.answers or "", len(quiz["questions"])))
+        save_json(quiz_path, quiz)
+        save_json(STATE_PATH, state)
+        result["tomorrow"] = describe_plan(plan_today(skills, state, today + timedelta(days=1)))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     if not args.force and any(s["date"] == today.isoformat() for s in state["sessions"]):
         print("오늘 학습은 이미 마쳤습니다. 진도는 --status로 볼 수 있습니다.")

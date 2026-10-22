@@ -7,7 +7,7 @@ The quick brown fox
 
 ## AI Coach
 
-퀴즈 결과에 맞춰 다음 날 배울 내용을 바꾸는 적응형 학습 코치입니다. [ai-coach/README.md](ai-coach/README.md)를 보세요.
+퀴즈 결과에 맞춰 다음 날 배울 내용을 바꾸는 적응형 학습 코치입니다. API 키 없이 매일 GitHub 이슈로 받는 루틴 모드도 있습니다. [ai-coach/README.md](ai-coach/README.md)를 보세요.
 
 ## Tests
 

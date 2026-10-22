@@ -120,5 +120,46 @@ class QuizInputTest(unittest.TestCase):
         self.assertEqual(coach.ask_choice(question("x"), ask=lambda _: next(replies)), 1)
 
 
+class RoutineTest(unittest.TestCase):
+    def setUp(self):
+        self.skills = coach.load_json(coach.SKILLS_PATH)["skills"]
+        self.profile = coach.load_json(coach.PROFILE_PATH)
+
+    def quiz(self):
+        return {
+            "date": TODAY.isoformat(), "main": "llm-basics", "mode": "new", "review": "ai-ml-dl",
+            "questions": [question("llm-basics", 0), question("llm-basics", 1), question("ai-ml-dl", 2)],
+        }
+
+    def test_plan_payload_has_writing_instructions(self):
+        payload = coach.plan_payload(self.profile, self.skills, coach.new_state(), TODAY)
+        self.assertEqual(payload["main"]["id"], "ai-ml-dl")
+        self.assertIn(payload["main"]["title"], payload["lesson_prompt"])
+        self.assertIn("ai-ml-dl", payload["quiz_instructions"])
+        self.assertEqual(payload["quiz_schema"], coach.QUIZ_SCHEMA)
+
+    def test_parse_answers(self):
+        self.assertEqual(coach.parse_answers("답: 1, 3 2", 3), [0, 2, 1])
+        with self.assertRaises(ValueError):
+            coach.parse_answers("1 3", 3)
+
+    def test_grade_quiz_updates_state_once(self):
+        state = coach.new_state()
+        coach.update_skill(state, "ai-ml-dl", 2, 2, TODAY - timedelta(days=3))
+        quiz = self.quiz()
+        result = coach.grade_quiz(self.skills, state, quiz, [0, 1, 0])
+        self.assertEqual((result["correct"], result["total"]), (2, 3))
+        self.assertFalse(result["results"][2]["ok"])
+        self.assertEqual(coach.skill_box(state, "llm-basics"), 2)
+        self.assertEqual(coach.skill_box(state, "ai-ml-dl"), 1)
+        self.assertTrue(quiz["graded"])
+        with self.assertRaises(ValueError):
+            coach.grade_quiz(self.skills, state, quiz, [0, 1, 0])
+
+    def test_grade_quiz_rejects_out_of_range_answer(self):
+        with self.assertRaises(ValueError):
+            coach.grade_quiz(self.skills, coach.new_state(), self.quiz(), [0, 1, 7])
+
+
 if __name__ == "__main__":
     unittest.main()
